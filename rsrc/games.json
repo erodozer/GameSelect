@@ -1,0 +1,13 @@
+{
+	"Beatshot" : {
+		"command" : "java",
+		"args" : "-jar ../Beatshot/beatshot.jar:../Beatshot/beatshot-rsrc.jar"
+	},
+	"Press Right to Friend" : {
+		"command" : "snes9x",
+		"args" : [
+			".\\pr2f.smc",
+			"-fullscreen"
+		]
+	}
+}
