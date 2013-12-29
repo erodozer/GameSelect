@@ -7,6 +7,7 @@ import sun.util.calendar.BaseCalendar.Date;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
@@ -17,12 +18,27 @@ import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GLCommon;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.BitmapFont.TextBounds;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.List;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
@@ -46,11 +62,6 @@ public class Scene implements Screen {
 	Camera camera;
 	ShapeRenderer sr;
 	
-	//colors used for navigating the menu
-	Color menuBack;
-	Color highlight;
-	Color menuText;
-	
 	//default internal resolution
 	public static int[] FOV = {800, 480};
 	
@@ -69,8 +80,7 @@ public class Scene implements Screen {
 	public static String message = "test";
 	float messageWidth;
 	
-	int menuIndex;
-	
+	Stage menu;
 
 	private Array<FileHandle> bgmPaths;
 	private Music nextBgm;	//preloaded bgm;
@@ -114,31 +124,73 @@ public class Scene implements Screen {
 			Utils.bgm.setLooping(false);
 		}
 		
-		menuBack = new Color(0.0f, 0.0f, .5f, .5f);
-		highlight = Color.YELLOW;
-		menuText = Color.WHITE;
+		menu = new Stage();
 		
-		Gdx.input.setInputProcessor(new InputProcessor(){
-
+		//create the table to hold the ui elements
+		Table container = new Table();
+		menu.addActor(container);
+		container.setFillParent(true);
+		
+		//set graphics
+		Color highlight = Color.YELLOW;
+		Color menuText = Color.WHITE;
+		NinePatch select = new NinePatch(new Texture(Gdx.files.internal("images/select.png")), 3, 3, 3, 3);
+		NinePatch front = new NinePatch(new Texture(Gdx.files.internal("images/scrollbar.png")), 3, 3, 3, 3);
+		NinePatch background = new NinePatch(new Texture(Gdx.files.internal("images/scrollback.png")), 3, 3, 3, 3);
+		Texture t = new Texture(Gdx.files.internal("images/scrollbar_back.png"));
+		t.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		NinePatch back = new NinePatch(t, 3, 3, 3, 3);
+		
+		//create skins
+		List.ListStyle skinL = new List.ListStyle(menuFont, highlight, menuText, new NinePatchDrawable(select));
+		ScrollPane.ScrollPaneStyle skin = new ScrollPane.ScrollPaneStyle(new NinePatchDrawable(background), new NinePatchDrawable(back), new NinePatchDrawable(front), new NinePatchDrawable(back), new NinePatchDrawable(front));
+		
+		//create list and scrollpane
+		final List l = new List(games.names(), skinL);
+		final ScrollPane pane = new ScrollPane(l, skin);
+		pane.setScrollbarsOnTop(true);
+		
+		//set the container and add the pane
+		container.pad(20);
+		container.padBottom(52);
+		container.add(pane).fill().expand();
+		
+		menu.addListener(new InputListener(){
 			@Override
-			public boolean keyDown(int keycode) {
+			public boolean keyDown(InputEvent event, int keycode) {
 				if (!hideMenu){
-					//navigate the menu
-					if (keycode == Keys.DOWN)
-					{
-						menuIndex++;
-					}
-					else if (keycode == Keys.UP)
-					{
-						menuIndex--;
-					}
-					menuIndex = MathUtils.clamp(menuIndex, 0, games.size()-1);
-					
+					switch(keycode) {
+					 	 case Keys.DPAD_UP: {
+							 int index = l.getSelectedIndex() - 1;
+							 if(index < 0)
+								 index = l.getItems().length - 1;
+							 l.setSelectedIndex(index);
+							 float y = l.getItemHeight()*index;
+							 if (y < pane.getScrollY() || y > pane.getScrollY() + pane.getHeight())
+							 {
+								 pane.setScrollY(y);
+							 }
+							 break;
+					 	 }
+						 case Keys.DPAD_DOWN: {
+							 int index = l.getSelectedIndex() + 1;
+							 if(index > l.getItems().length - 1)
+								 index = 0;
+							 l.setSelectedIndex(index);
+							 float y = l.getItemHeight()*index;
+							 if (y < pane.getScrollY() || y > pane.getScrollY() + pane.getHeight())
+							 {
+								 pane.setScrollY(y);
+							 }
+							 break;
+						 }
+				 	 }
+						
 					//launch a game
 					if (keycode == Keys.ENTER)
 					{
 						try {
-							game = games.launch(games.get(menuIndex));
+							game = games.launch(games.get(l.getSelectedIndex()));
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -158,57 +210,22 @@ public class Scene implements Screen {
 					//Boss key, kill the select screen
 					if (keycode == Keys.F9)
 					{
-						System.exit(0);
+						Gdx.app.exit();
 					}
 				}
 				return false;
 			}
-
-			@Override
-			public boolean keyUp(int keycode) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-
-			@Override
-			public boolean keyTyped(char character) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-
-			@Override
-			public boolean touchDown(int screenX, int screenY, int pointer,
-					int button) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-
-			@Override
-			public boolean touchUp(int screenX, int screenY, int pointer,
-					int button) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-
-			@Override
-			public boolean touchDragged(int screenX, int screenY, int pointer) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-
-			@Override
-			public boolean mouseMoved(int screenX, int screenY) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-
-			@Override
-			public boolean scrolled(int amount) {
-				// TODO Auto-generated method stub
-				return false;
-			}
-			
 		});
+		menu.addListener(new InputListener() {
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                event.stop();
+                return false;
+            }
+        });
+		InputMultiplexer im = new InputMultiplexer();
+		im.addProcessor(menu);
+		
+		Gdx.input.setInputProcessor(im);
 	}
 	
 	/**
@@ -222,6 +239,7 @@ public class Scene implements Screen {
 	
 	@Override
 	public void render(float delta) {
+		menu.act(delta);
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
 		sr.setProjectionMatrix(camera.combined);
@@ -291,28 +309,9 @@ public class Scene implements Screen {
 		//draw menu
 		if (!hideMenu)
 		{
-			gl.glEnable(GL10.GL_BLEND);
-			gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-			sr.setColor(this.menuBack);
-			sr.begin(ShapeType.Filled);
-			sr.rect(20, 40, FOV[0] - 40, FOV[1] - 60);
-			sr.end();
-			gl.glDisable(GL10.GL_BLEND);
-			
-			batch.begin();
-			for (int i = 0, x = 32, y = (int) (FOV[1] - 32 - menuFont.getLineHeight()); i < games.size(); i++, y -= menuFont.getLineHeight())
-			{
-				if (i == menuIndex)
-				{
-					menuFont.setColor(highlight);
-				}
-				else
-				{
-					menuFont.setColor(menuText);
-				}
-				menuFont.draw(batch, games.get(i), x, y);
-			}
-			batch.end();
+			menu.setCamera(camera);
+			menu.setViewport(FOV[0], FOV[1]);
+			menu.draw();
 		}
 		
 		if (Utils.bgm != null && !Utils.bgm.isPlaying())

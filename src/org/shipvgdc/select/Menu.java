@@ -55,4 +55,8 @@ public class Menu {
 	{
 		return names.get(i);
 	}
+
+	public Object[] names() {
+		return names.toArray();
+	}
 }
