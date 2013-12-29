@@ -8,12 +8,13 @@ import com.badlogic.gdx.utils.JsonValue;
 
 public class Menu {
 	
-	HashMap<String, ProcessBuilder> commands;
+	private ArrayList<String> names;
+	private HashMap<String, ProcessBuilder> commands;
 	
 	public Menu(JsonValue menu)
 	{
 		commands = new HashMap<String, ProcessBuilder>();
-		
+		names = new ArrayList<String>();
 		for (int i = 0; i < menu.size; i++)
 		{
 			JsonValue command = menu.get(i);
@@ -35,7 +36,13 @@ public class Menu {
 			
 			b = new ProcessBuilder(args);
 			commands.put(name, b);
+			names.add(name);
 		}
+	}
+	
+	public int size()
+	{
+		return commands.size();
 	}
 	
 	
@@ -44,4 +51,8 @@ public class Menu {
 		return commands.get(command).start();
 	}
 	
+	public String get(int i)
+	{
+		return names.get(i);
+	}
 }
