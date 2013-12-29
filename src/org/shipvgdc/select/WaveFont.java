@@ -30,7 +30,7 @@ public class WaveFont {
 	
 	public void draw(SpriteBatch batch, String str, float x, float y)
 	{
-		float sigma = MathUtils.PI2 / str.length();
+		float sigma = MathUtils.PI2 / 10f;
 		float theta = (timer/duration) * MathUtils.PI2;
 		float width = font.getBounds(str).width;
 		float wave = y + waveSize * MathUtils.sin(theta);
