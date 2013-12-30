@@ -2,20 +2,15 @@ package org.shipvgdc.select;
 
 import java.io.IOException;
 import java.util.Calendar;
-
-import sun.util.calendar.BaseCalendar.Date;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.GLCommon;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -26,21 +21,14 @@ import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Event;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.List;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
 public class Scene implements Screen {
@@ -85,6 +73,8 @@ public class Scene implements Screen {
 	private Array<FileHandle> bgmPaths;
 	private Music nextBgm;	//preloaded bgm;
 
+	private boolean paused;
+
 	public void init() {
 		JsonValue list = Utils.json.parse(Gdx.files.internal("games.json"));
 		games = new Menu(list);
@@ -110,7 +100,9 @@ public class Scene implements Screen {
 		
 		sf = new StarField();
 		
-		bgmPaths = new Array<FileHandle>(Gdx.files.internal("music/").list());
+		FileHandle[] bgms = Gdx.files.internal("music/").list("mp3");
+		
+		bgmPaths = new Array<FileHandle>(bgms);
 		System.out.println(bgmPaths);
 		if (bgmPaths.size > 0)
 		{
@@ -239,6 +231,9 @@ public class Scene implements Screen {
 	
 	@Override
 	public void render(float delta) {
+		if (paused)
+			return;
+		
 		menu.act(delta);
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
@@ -347,12 +342,14 @@ public class Scene implements Screen {
 
 	@Override
 	public void pause() {
+		paused = true;
 		if (Utils.bgm != null)
 			Utils.bgm.pause();
 	}
 
 	@Override
 	public void resume() {
+		paused = false;
 		if (Utils.bgm != null)
 			Utils.bgm.play();
 	}
