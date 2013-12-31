@@ -3,6 +3,10 @@ package org.shipvgdc.select;
 import java.io.IOException;
 import java.util.Calendar;
 
+import org.farng.mp3.MP3File;
+import org.farng.mp3.TagException;
+import org.farng.mp3.id3.ID3v1;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
@@ -73,7 +77,8 @@ public class Scene implements Screen {
 
 	private Array<FileHandle> bgmPaths;
 	private Music nextBgm;	//preloaded bgm;
-
+	private MP3File bgm;
+	
 	private boolean paused;
 
 	public void init() {
@@ -104,7 +109,6 @@ public class Scene implements Screen {
 		FileHandle[] bgms = Gdx.files.internal("music/").list("mp3");
 		
 		bgmPaths = new Array<FileHandle>(bgms);
-		System.out.println(bgmPaths);
 		if (bgmPaths.size > 0)
 		{
 			FileHandle b = bgmPaths.get((int)(Math.random()*bgmPaths.size));
@@ -277,6 +281,12 @@ public class Scene implements Screen {
 			//draw bottom scrolling message
 			{
 				String date = Calendar.getInstance().getTime().toString();
+				if (bgm != null)
+				{
+					ID3v1 tag = bgm.getID3v1Tag();
+					date += "     Currently Playing: " + tag.getArtist() + " - " + tag.getTitle();
+				}
+				
 				TextBounds bounds = scrollFont.getBounds(date);
 				
 				bottomScroll += bottomSpd * delta;
@@ -321,6 +331,12 @@ public class Scene implements Screen {
 			FileHandle n = bgmPaths.get((int)(Math.random()*bgmPaths.size));
 			nextBgm = Gdx.audio.newMusic(n);
 			nextBgm.setLooping(false);
+			
+			try {
+				bgm = new MP3File(n.file());
+			} catch (IOException | TagException e) {
+				System.out.println("file could not load");
+			}
 		}
 	}
 

@@ -8,7 +8,8 @@ https://github.com/shipgamedev/GameSelect
 ###Required Libraries
 
 Java 1.7
-libGDX
+libGDX - http://libgdx.badlogicgames.com/
+Java ID3 Tag Library - http://libgdx.badlogicgames.com/
 
 ###Links
 Music: http://keygenjukebox.com/
