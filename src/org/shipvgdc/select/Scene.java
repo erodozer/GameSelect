@@ -2,6 +2,7 @@ package org.shipvgdc.select;
 
 import java.io.IOException;
 import java.util.Calendar;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
@@ -214,8 +215,10 @@ public class Scene implements Screen {
                 return false;
             }
         });
+	
 		InputMultiplexer im = new InputMultiplexer();
 		im.addProcessor(menu);
+		im.addProcessor(Utils.utilInput);
 		
 		Gdx.input.setInputProcessor(im);
 	}
