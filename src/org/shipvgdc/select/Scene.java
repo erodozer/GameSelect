@@ -5,6 +5,7 @@ import java.util.Calendar;
 
 import org.farng.mp3.MP3File;
 import org.farng.mp3.TagException;
+import org.farng.mp3.filename.FilenameTag;
 import org.farng.mp3.id3.ID3v1;
 
 import com.badlogic.gdx.Gdx;
@@ -283,8 +284,16 @@ public class Scene implements Screen {
 				String date = Calendar.getInstance().getTime().toString();
 				if (bgm != null)
 				{
-					ID3v1 tag = bgm.getID3v1Tag();
-					date += "     Currently Playing: " + tag.getArtist() + " - " + tag.getTitle();
+					if (bgm.hasID3v1Tag())
+					{
+						ID3v1 tag = bgm.getID3v1Tag();
+						date += "     Currently Playing: " + tag.getArtist() + " - " + tag.getTitle();		
+					}
+					else
+					{
+						String filename = bgm.getMp3file().getName();
+						date += "     Currently Playing: " + filename.substring(0, filename.lastIndexOf('.'));
+					}
 				}
 				
 				TextBounds bounds = scrollFont.getBounds(date);
